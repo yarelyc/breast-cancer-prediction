@@ -1,0 +1,42 @@
+---
+title: "Predicting Breast Cancer with Classification Trees"
+author: "Hugo Argueta"
+date: "May 9, 2017"
+output: html_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(prompt=TRUE, comment="", echo=TRUE)
+```
+
+```{r}
+library(rpart)
+library(rpart.plot)
+```
+
+### Split dataset into training set and testing set
+
+```{r}
+set.seed(135)
+
+dat = read.csv("/Users/juice/Documents/CST463/final-project/breast-cancer-prediction/data.csv")
+dat$X = NULL
+
+num_tr = sample(1:nrow(dat), floor(nrow(dat) * .75))
+tr_dat = dat[num_tr,]
+te_dat = dat[-num_tr,]
+
+```
+
+### Create Decision Tree classifier
+
+```{r}
+fit = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst + symmetry_worst, data=tr_dat, method="class")
+
+prp(fit, extra=106, varlen=-10, main="classification tree for breast cancer", box.col=c("palegreen", "pink")[fit$frame$yval])
+
+predicts = predict(fit, te_dat, type="class")
+actuals = te_dat$diagnosis
+
+round(mean(predicts == actuals), 3)
+```
