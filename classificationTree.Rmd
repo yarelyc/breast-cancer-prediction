@@ -40,3 +40,22 @@ actuals = te_dat$diagnosis
 
 round(mean(predicts == actuals), 3)
 ```
+
+Confusion matrix for actuals vs. predicted
+
+```{r}
+conf_mtx = table(actuals, predicts)
+conf_mtx
+```
+
+Here, we calculate the classifier's precision
+
+```{r}
+conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[1,2])
+```
+
+Here, we calculate the classifier's recall
+
+```{r}
+conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[2,1])
+```

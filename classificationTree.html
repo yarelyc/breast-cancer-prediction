@@ -147,6 +147,19 @@ $(document).ready(function () {
 &gt; 
 &gt; round(mean(predicts == actuals), 3)</code></pre>
 <pre><code>[1] 0.965</code></pre>
+<p>Confusion matrix for actuals vs. predicted</p>
+<pre class="r"><code>&gt; conf_mtx = table(actuals, predicts)
+&gt; conf_mtx</code></pre>
+<pre><code>       predicts
+actuals  B  M
+      B 87  5
+      M  0 51</code></pre>
+<p>Here, we calculate the classifier’s precision</p>
+<pre class="r"><code>&gt; conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[1,2])</code></pre>
+<pre><code>[1] 0.9107143</code></pre>
+<p>Here, we calculate the classifier’s recall</p>
+<pre class="r"><code>&gt; conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[2,1])</code></pre>
+<pre><code>[1] 1</code></pre>
 </div>
 
 
