@@ -15,7 +15,6 @@ library(rpart.plot)
 
 library(e1071)
 library(rpart)
-# source("/Users/karinapizano/Documents/Data Mining/lin-regr-util.R")
 ```
 
 ## Introduction
@@ -27,7 +26,7 @@ library(rpart)
 ```{r}
 set.seed(135)
 
-dat = read.csv("/Users/juice/Documents/CST463/final-project/breast-cancer-prediction/data.csv")
+dat = read.csv("data.csv")
 dat$X = NULL
 dat$output = ifelse(dat$diagnosis == "M", 1, 0)
 
@@ -49,21 +48,22 @@ _Scatter plots to detect any correlation between the features. We see strong pos
 
 ```{r}
 plot(dat[,c("radius_mean", "texture_mean","perimeter_mean", "concavity_mean")])
+
 ```
 
 _Our dataset contains a good balance of diagnosis data._
 ```{r}
-barplot(table(dat$diagnosis), names.arg=c("No Cancer", "Cancer"), main="Amount of Cancer and Non Cancer Patients", col=c("blue", "red4"))
+barplot(table(dat$diagnosis), names.arg=c("No Cancer", "Cancer"), main="Amount of Cancer and Non Cancer Patients", col=c("green", "red"))
 ```
 
 _Function to predict breast cancer using a single element._
 ```{r}
 predict_by = function(name){
-  plot(dat$output ~ dat$element, col="red4", pch = 16, ylab = "probability", xlab = name, main=paste0("Breast cancer probability using ", name))
+  plot(dat$output ~ dat$element, col="red", pch = 16, ylab = "probability", xlab = name, main=paste0("Breast cancer probability using ", name))
   fit = glm(output ~ element, data=dat, family=binomial )
   bp = data.frame(element=seq(range(dat$element)[1],range(dat$element)[2], length.out=50))
   probs = predict(fit, newdata=bp, type="response")
-  lines(bp$element, probs, lty=2, col = "blue")
+  lines(bp$element, probs, lty=2, col = "green")
 }
 ```
 
@@ -376,5 +376,4 @@ grid(col="grey60")
 ```
 
 ## Conclusion
-_In conclusion, we were able to obtain an average of 96.6% accuracy when using Logistic Regression, Decision Trees, and Naïve Byes. The classifier that achieved the highest accuracy was _
-
+_In conclusion, we were able to obtain an average of 96.6% accuracy when using Logistic Regression, Decision Trees, and Naïve Byes. The classifier that achieved the highest accuracy was Naïve Bayes. We created our Naïve Bayes classifier using radius worst, texture worst, and concave points worst. We found that the extreme measurements of the features worked the best on predicting breast cancer. For future work, it would be great to gather more data to ensure that our classifier's predictions are more reliable._ 
