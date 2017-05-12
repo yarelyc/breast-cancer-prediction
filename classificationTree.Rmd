@@ -23,30 +23,6 @@ dat = read.csv("/Users/juice/Documents/CST463/final-project/breast-cancer-predic
 dat$X = NULL
 ```
 
-### Data exploration
-
-Plot texture_worst by radius_worst
-
-```{r}
-plot(dat$texture_worst, dat$radius_worst, col = "green", main = "Texture Worst by Radius Worst", xlab = "texture worst", ylab = "radius worst", pch=16)
-malignant = dat$diagnosis == "M"
-points(dat[malignant, ]$texture_worst, dat[malignant, ]$radius_worst, col = "red", pch=16)
-```
-
-Plot texture_worst by concave.points_worst
-
-```{r}
-plot(dat$texture_worst, dat$concave.points_worst, col = "green", main = "Texture Worst by Concave.Points Worst", xlab = "texture worst", ylab = "concave.points worst", pch=16)
-malignant = dat$diagnosis == "M"
-points(dat[malignant, ]$texture_worst, dat[malignant, ]$concave.points_worst, col = "red", pch=16)
-```
-
-```{r}
-plot(dat$radius_worst, dat$concave.points_worst, col = "green", main = "Radius Worst by Concave.Points Worst", xlab = "radius worst", ylab = "concave.points worst", pch=16)
-malignant = dat$diagnosis == "M"
-points(dat[malignant, ]$radius_worst, dat[malignant, ]$concave.points_worst, col = "red", pch=16)
-```
-
 ### Split dataset into training set and testing set
 
 ```{r}
@@ -55,12 +31,45 @@ tr_dat = dat[num_tr,]
 te_dat = dat[-num_tr,]
 ```
 
-### Create Decision Tree classifier (Model 1)
+### Data exploration
+
+Here, we are plotting texture_worst by radius_worst and displaying the occurrences of breast cancer in red, and the occurrences of no breast cancer in green for each point in our plot. This plot shows that there is a boundary line at around 16. This may indicate that these two features will be useful in predicting breast cancer.
 
 ```{r}
-fit = rpart(diagnosis ~ radius_mean + concave.points_mean + texture_mean, data=tr_dat, method="class")
+plot(dat$texture_worst, dat$radius_worst, col = "green", main = "Texture Worst by Radius Worst", xlab = "texture worst", ylab = "radius worst", pch=16)
+malignant = dat$diagnosis == "M"
+points(dat[malignant, ]$texture_worst, dat[malignant, ]$radius_worst, col = "red", pch=16)
+text_rad_fit = rpart(diagnosis ~ texture_worst + radius_worst, data=tr_dat, method="class")
+split = text_rad_fit$splits[1, "index"]
+abline(h=split, lty=2, col='blue')
+```
 
-prp(fit, extra=106, varlen=-10, main="Classification Tree for Breast Cancer (Model 1)", box.col=c("green","red")[fit$frame$yval])
+Plot texture_worst by concave.points_worst
+
+```{r}
+plot(dat$texture_worst, dat$concave.points_worst, col = "green", main = "Texture Worst by Concave.Points Worst", xlab = "texture worst", ylab = "concave.points worst", pch=16)
+malignant = dat$diagnosis == "M"
+points(dat[malignant, ]$texture_worst, dat[malignant, ]$concave.points_worst, col = "red", pch=16)
+text_conc_fit = rpart(diagnosis ~ texture_worst + concave.points_worst, data=tr_dat, method="class")
+split = text_conc_fit$splits[1, "index"]
+abline(h=split, lty=2, col='blue')
+```
+
+```{r}
+plot(dat$radius_worst, dat$concave.points_worst, col = "green", main = "Radius Worst by Concave.Points Worst", xlab = "radius worst", ylab = "concave.points worst", pch=16)
+malignant = dat$diagnosis == "M"
+points(dat[malignant, ]$radius_worst, dat[malignant, ]$concave.points_worst, col = "red", pch=16)
+rad_conc_fit = rpart(diagnosis ~ radius_worst + concave.points_worst, data=tr_dat, method="class")
+split = rad_conc_fit$splits[1, "index"]
+abline(v=split, lty=2, col='blue')
+```
+
+### Create Decision Tree classifier
+
+```{r}
+fit = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst, data=tr_dat, method="class")
+
+prp(fit, extra=106, varlen=-10, main="Classification Tree for Breast Cancer", box.col=c("green", "red")[fit$frame$yval])
 ```
 
 Confusion matrix for actuals vs. predicted
@@ -91,7 +100,7 @@ Here, we calculate the classifier's recall
 conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[2,1])
 ```
 
-### Learning Curve for Model 1
+### Learning Curve for Decision Tree Classification
 
 ```{r}
 te_errs = c()
@@ -117,74 +126,6 @@ for (tr_size in tr_sizes) {
 
 plot(range(tr_sizes), range(te_errs, tr_errs), type='n', xlab='training set size', ylab='error')
 
-lines(tr_sizes, tr_errs, col='red')
-lines(tr_sizes, te_errs, col='blue')
-```
-
-### Create Decision Tree classifier (Model 2)
-
-```{r}
-fit2 = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst, data=tr_dat, method="class")
-
-prp(fit2, extra=106, varlen=-10, main="Classification Tree for Breast Cancer (Model 2)", box.col=c("green", "red")[fit2$frame$yval])
-```
-
-Confusion matrix for actuals vs. predicted
-
-```{r}
-predicts2 = predict(fit2, te_dat, type="class")
-actuals2 = te_dat$diagnosis
-
-conf_mtx2 = table(actuals2, predicts2)
-conf_mtx2
-```
-
-We calculate the classifier's accuracy
-
-```{r}
-round(mean(predicts2 == actuals2), 3)
-```
-
-
-
-Here, we calculate the classifier's precision
-
-```{r}
-conf_mtx2[2,2] / (conf_mtx2[2,2] + conf_mtx2[1,2])
-```
-
-Here, we calculate the classifier's recall
-
-```{r}
-conf_mtx2[2,2] / (conf_mtx2[2,2] + conf_mtx2[2,1])
-```
-
-### Learning Curve for Decision Tree Classification (Model 2)
-
-```{r}
-te_errs = c()
-tr_errs = c()
-te_actual = te_dat$diagnosis
-tr_sizes = seq(100, nrow(tr_dat), length.out=10)
-for (tr_size in tr_sizes) {
-  tr_dat1 = tr_dat[1:tr_size,]
-  tr_actual = tr_dat1$diagnosis
-  fit = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst, data=tr_dat1, method="class")
-  # error on training set
-  tr_predicted = predict(fit, tr_dat1, type="class")
-  tr_predicted
-  err = sum(tr_actual != tr_predicted)/length(tr_predicted)
-  tr_errs = c(tr_errs, err)
- 
-  # error on test set
-  te_predicted = predict(fit, te_dat, type="class")
-  err = sum(te_actual != te_predicted)/length(te_predicted)
-  te_errs = c(te_errs, err)
-  te_errs
-}
-
-plot(range(tr_sizes), range(te_errs, tr_errs), type='n', xlab='training set size', ylab='error')
-
-lines(tr_sizes, tr_errs, col='red')
-lines(tr_sizes, te_errs, col='blue')
+lines(tr_sizes, tr_errs, col='green')
+lines(tr_sizes, te_errs, col='red')
 ```
