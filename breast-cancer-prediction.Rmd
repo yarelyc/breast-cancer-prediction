@@ -1,0 +1,107 @@
+---
+title: "Predicting Breast Cancer using Logistic Regression, Decision Trees, and Naïve Bayes"
+author: "Hugo Argueta, Karina Pizano, Yarely Chino"
+date: "May 12, 2017"
+output: html_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(prompt=TRUE, comment="", echo=TRUE)
+```
+
+```{r echo=FALSE}
+library(rpart)
+library(rpart.plot)
+
+library(e1071)
+library(rpart)
+# source("/Users/karinapizano/Documents/Data Mining/lin-regr-util.R")
+```
+
+## Introduction
+
+#### _We wanted to predict the presence of breast cancer based on features computed from a digitized image of a fine needle aspirate of a breast mass. The features used for the predictions describe characteristics of the cell nuclei present in the image._
+
+### Load data
+
+```{r}
+set.seed(135)
+
+dat = read.csv("/Users/juice/Documents/CST463/final-project/breast-cancer-prediction/data.csv")
+dat$X = NULL
+dat$output = ifelse(dat$diagnosis == "M", 1, 0)
+
+# Create Factors
+dat$diagnosis = factor(dat$diagnosis, labels =c("None", "Cancer"))
+```
+
+### Split dataset into training set and testing set
+
+```{r}
+num_tr = sample(1:nrow(dat), floor(nrow(dat) * .75))
+tr_dat = dat[num_tr,]
+te_dat = dat[-num_tr,]
+```
+
+### Data Exploration
+
+_Scatter plot to detect any correlation between the features. We see some linearality between some of the pairs of points. This shows these features are correleted, so they might not work too well with the Naïve Bayes classifier._
+
+```{r}
+plot(dat[,c("radius_mean", "texture_mean","perimeter_mean", "concavity_mean")])
+```
+
+_Here, we are plotting texture worst by radius worst and displaying the occurrences of breast cancer in red, and the occurrences of no breast cancer in green for each point in our plot. This plot shows that there is a boundary line at around 16. This may indicate that these two features will be useful in predicting breast cancer._
+
+```{r}
+plot(dat$texture_worst, dat$radius_worst, col = "green", main = "Texture Worst by Radius Worst", xlab = "texture worst", ylab = "radius worst", pch=16)
+malignant = dat$diagnosis == "Cancer"
+points(dat[malignant, ]$texture_worst, dat[malignant, ]$radius_worst, col = "red", pch=16)
+text_rad_fit = rpart(diagnosis ~ texture_worst + radius_worst, data=tr_dat, method="class")
+split = text_rad_fit$splits[1, "index"]
+abline(h=split, lty=2, col='blue')
+```
+
+### Model Creation
+
+#### Creating Decision Tree Classifier
+
+_We are creating a decision tree classifier to predict the diagnosis feature based on the features radius worst, concave.points worst, and texture worst._
+
+```{r}
+tree_fit = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst, data=tr_dat, method="class")
+
+prp(tree_fit, extra=106, varlen=-10, main="Classification Tree for Breast Cancer", box.col=c("green", "red")[tree_fit$frame$yval])
+```
+
+#### Creating Naïve Bayes Classifier
+
+_We are creating a Naïve Bayes classifier to predict the diagnosis feature based on the features radius worst, texture worst, and concave.points worst._
+
+```{r }
+bayes_fit = naiveBayes(diagnosis ~ radius_worst + texture_worst + concave.points_worst, data= tr_dat)
+```
+
+### Assessing the Models
+
+#### Confusion matrix for Decision Tree
+_From the confusion matrix for actuals vs. predicted, we can see that we have low false positives and no false negatives._
+
+```{r}
+tree_predicts = predict(tree_fit, te_dat, type="class")
+tree_actuals = te_dat$diagnosis
+
+tree_conf_mtx = table(tree_actuals, tree_predicts)
+tree_conf_mtx
+```
+
+#### Confusion matrix for Naïve Bayes
+_From the confusion matrix for actuals vs. predicted, we can see that we also have low false positives and low false negatives._
+
+```{r}
+bayes_predicts = predict(bayes_fit, te_dat)
+bayes_actuals = te_dat$diagnosis
+
+bayes_conf_mtx = table(bayes_actuals, bayes_predicts)
+bayes_conf_mtx
+```
