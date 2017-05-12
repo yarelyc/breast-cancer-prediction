@@ -1,0 +1,123 @@
+
+---
+title: "Predicting Breast Cancer using Logistic Regression"
+author: "Yarely Chino"
+date: "May 9, 2017"
+output: html_document
+---
+
+<!-- Note: echo=TRUE to show code -->
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(prompt=TRUE, comment="", echo=TRUE)
+```
+
+<!-- Random seed -->
+```{r}
+set.seed(127)
+```
+
+Include sources
+```{r}
+library(rpart)
+library(rpart.plot)
+source("/Users/yarelychino/Downloads/lin-regr-util.R")
+source("/Users/yarelychino/Downloads/class-util.R")
+
+```
+
+##Reading and preprocessing the data set
+
+```{r}
+dat = read.csv("/Users/yarelychino/Desktop/breast-cancer-prediction/data.csv")
+dat$X = NULL
+dat$output = ifelse(dat$diagnosis == "M", 1, 0)
+
+```
+
+
+
+### Split dataset into training set and testing set
+```{r}
+
+splits = sample(1:nrow(dat), floor(0.80 * nrow(dat)))
+tr_dat = dat[splits,]
+te_dat = dat[-splits,]
+
+```
+
+##Model 1
+first build a model and look at the model summary to see which features appear to be relevant.
+
+```{r}
+
+fit = glm(output ~ radius_worst + area_worst + smoothness_worst, dat=tr_dat, family=binomial)
+summary(fit)
+
+```
+
+###Predictions
+
+Confusion Matrix 
+```{r}
+pred = predict(fit, newdata=te_dat, type="response")
+predicts = as.numeric(pred > 0.5)
+actuals = te_dat$output
+conf_mtx = table(predicts, actuals)
+conf_mtx
+
+```
+Accrucy 
+```{r}
+mean(predicts == actuals)
+```
+
+Classifier's Precision
+
+```{r}
+conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[1,2])
+```
+
+Classifier's Recall
+
+```{r}
+conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[2,1])
+```
+
+```{r}
+
+te_errs = c()
+tr_errs = c()
+te_actual = te_dat$output
+
+tr_sizes = seq(100, nrow(tr_dat), length.out=10)
+
+for (tr_size in tr_sizes) {
+  tr_dat1 = tr_dat[1:tr_size,]
+  tr_actual = tr_dat1$output
+  
+  #creating model using tr_dat1
+  fit = glm(output ~ radius_worst + area_worst + smoothness_worst, dat=tr_dat1, family=binomial)
+  
+  # error on training set
+  tr_predicted = predict(fit, tr_dat1, type="response")
+  tr_predicted = as.numeric(tr_predicted > 0.5)
+  err = sum(tr_actual != tr_predicted)/length(tr_predicted)
+  tr_errs = c(tr_errs, err)
+  
+  # error on test set
+  te_predicted = predict(fit, te_dat, type="response")
+  te_predicted = as.numeric(te_predicted > 0.5)
+  err = sum(te_actual != te_predicted)/length(te_predicted)
+  te_errs = c(te_errs, err)
+}
+ plot(tr_sizes, te_errs, type="l", col="red4", ylim=range(c(te_errs,tr_errs)), xlab="Size", ylab="Error", main="Learning Curve for Logistic Regression (Model 1)")
+ lines(tr_sizes, tr_errs, col="blue")
+legend(range(c(te_errs,tr_errs))[2], x = 395, legend = c("training errors", "testing errors"), col = c("blue", "red4"), pch="|",  cex = 0.75)
+
+```
+
+
+
+
+
+
