@@ -1,5 +1,5 @@
 ---
-title: "finalProject-breastCancer"
+title: "Breast Cancer prediction using Naive Bayes Classifier"
 author: "Karina Pizano"
 date: "5/8/2017"
 output: html_document
@@ -11,11 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(e1071)
+library(rpart)
 source("/Users/karinapizano/Documents/Data Mining/lin-regr-util.R")
+source("/Users/karinapizano/Documents/Data Mining/class-util.R")
 ```
 
 
-<!-- Title -->
+
 ###Breast Cancer Prediction
 _Data Cleaning and Munging_
 ```{r }
@@ -40,28 +42,25 @@ _Scatter Plot to detect any correlation between the attributes._
 plot(dat[,c("radius_mean", "texture_mean","perimeter_mean", "concavity_mean")])
 ```
 
-<!-- Plot all the features, to see if there is any correlation -->
+
 _We can see more correlation between more attributes_
 ```{r}
 plot(dat[,1:10])
 ```
 
 
-<!-- Our Data -->
-_Our data contains a good amount of data for both having Cancer and not having Caner, which will make our predictions pretty accurate._
+_Our data contains a good balance of diagnosis data._
 ```{r}
-barplot(table(dat$diagnosis), names.arg=c("No Cancer", "Cancer"), main="Amount of Cancer and Non Cancer patients", col=c("green", "yellow"))
+barplot(table(dat$diagnosis), names.arg=c("No Cancer", "Cancer"), main="Amount of Cancer and Non Cancer patients", col=c("cyan", "red"))
 ```
 
 
-<!-- Hist of radius_mean -->
 
-_Whats a popular radius mean when looking an infected area_
+_Whats a popular radius mean when looking at an infected area_
 
 ```{r}
-hist(dat$radius_mean, main="Radius mean", col="red", xlab = "radius mean")
+hist(dat$radius_worst, main="Radius Worst", col="cyan", xlab = "radius worst")
 ```
-
 
 ##Naive Bayes Model
 <!-- Naive Bayes Model -->
@@ -70,13 +69,11 @@ _Create a Naive Bayes Model_
 fit = naiveBayes(diagnosis ~ radius_worst + texture_worst + concave.points_worst, data= tr_dat)
 ```
 
-<!--Summary of fit -->
 _Summary of the Model_
 ```{r }
 summary(fit)
 ```
 
-<!-- Generate Predictions -->
 _Predictions & Confusion Matrix_
 ```{r}
 predictions = predict(fit, newdata=te_dat)
@@ -84,73 +81,120 @@ con_matrix = table(te_dat$diagnosis, predictions)
 con_matrix
 ```
 
-
-<!--Precision -->
-_Precision of the Classifier_
-```{r}
-con_matrix[2,2] / (con_matrix[2,2] + con_matrix[1,2])
-```
-
-
-
-<!-- Recall -->
-_Recall of our Classifier_
-```{r}
-con_matrix[2,2] / (con_matrix[2,2] + con_matrix[2,1])
-```
-
-
-
-
-<!-- Accuracy of the Classifier -->
 _The accuracy of our classifier._
 ```{r}
 accuracy = mean(predictions == te_dat$diagnosis)
 accuracy
 ```
 
-<!-- Density Plot "RADIUS_WORST" -->
-_Showing the distribution of radius worst when a person is diagnosed with cancer or not._
+_Precision of the Classifier_
+```{r}
+con_matrix[2,2] / (con_matrix[2,2] + con_matrix[1,2])
+```
+
+_Recall of our Classifier_
+```{r}
+con_matrix[2,2] / (con_matrix[2,2] + con_matrix[2,1])
+```
+
+
+_Showing the distribution of radius worst when a person is diagnosed with cancer or not diagnosed with the cancer using radius worst. We can see that as the radius worst increases above 15 the changes are higher of being diagnosed with cancer. _
 ```{r}
 
-plot(density(dat[dat$diagnosis == "None",]$radius_worst), col="green", main="Distibution of radius_mean")
+plot(density(dat[dat$diagnosis == "None",]$radius_worst), col="cyan", main="Distibution of Radius Worst")
 lines(density(dat[dat$diagnosis == "Cancer",]$radius_worst), col="red")
-legend(7,0.18,legend =c("Cancer", "No Cancer"), fill=c("red", "green"), cex=0.75)
+legend(7,0.18,legend =c("Cancer", "No Cancer"), fill=c("red", "cyan"), cex=0.75)
 
 ```
 <!-- Fitted model Standard deviations and mean using radius_worst when the disease is present and not present -->
-_We are looking at the trained distributions for the fitted model. Mean and Standard Deviation._
+
+_We are looking at the trained distributions for the fitted model, both when the disease IS present and NOT present. Mean and Standard Deviation._
 ```{r}
 fit$tables$radius_worst
 ```
 
 
-
-
-<!-- Density plot mean and standard deviation using "RADIUS_WORST" -->
 _Density plot for mean and standard deviation of radius worst._
 ```{r}
 plot(density(fit$tables$radius_worst[1,]), col="red", main="Mean & Standard Deviation")
-lines(density(fit$tables$radius_worst[2,]), col="green")
+lines(density(fit$tables$radius_worst[2,]), col="cyan")
+legend(-7,0.05,legend =c("Stan. Dev.", "Mean"), fill=c("cyan", "red"), cex=0.75)
 
 ```
 
 
-
-<!-- Density plot "WORST TEXTURE" -->
-_Density plot for mean and standard deviation of worst texture._
+_Density plot for mean and standard deviation of worst texture. Here we can see that when worst texture is around 25 the line between having cancer and not is blurred, but is leaning more on having cancer._
 ```{r}
-plot(density(dat[dat$diagnosis == "None",]$texture_worst), col="green", main="Mean")
+plot(density(dat[dat$diagnosis == "None",]$texture_worst), col="cyan", main="Mean")
 lines(density(dat[dat$diagnosis == "Cancer",]$texture_worst), col="red")
-legend(50,0.002,legend =c("Cancer", "No Cancer"), fill=c("red", "green"), cex=0.75)
+legend(10,0.06,legend =c("Cancer", "No Cancer"), fill=c("red", "cyan"), cex=0.75)
 ```
 
+<!-- ######################################################################## -->
 
+_Let's see how good we are able to predict Breast Cancer using naive bayes conditional probability and then compare it to the e01171 predictor._
+```{r}
+#Computing features. 
+tb = te_dat[1, c("radius_worst", "texture_worst", "concave.points_worst")]
 
+#Compute P(radius_mean | no disease) and p(radius_mean | disease)
+prob_no_radius_disease = dnorm(tb$radius_worst,mean=fit$tables$radius_worst[1,1],sd=fit$tables$radius_worst[1,2])
+prob_yes_radius_disease = dnorm(tb$radius_worst,mean=fit$tables$radius_worst[2,1],sd=fit$tables$radius_worst[2,2])
 
+#Compute P(texture_worst | no disease) and P(texture_worst | disease)
+prob_no_text_disease = dnorm(tb$texture_worst,mean=fit$tables$texture_worst[1,1],sd=fit$tables$texture_worst[1,2])
+prob_yes_text_disease = dnorm(tb$texture_worst,mean=fit$tables$texture_worst[2,1],sd=fit$tables$texture_worst[2,2])
 
+#Compute P(concave.points_worst | no disease) and P(concave.points_worst | disease)
+prob_no_points_disease = dnorm(tb$concave.points_worst,mean=fit$tables$concave.points_worst[1,1],sd=fit$tables$concave.points_worst[1,2])
+prob_yes_points_disease = dnorm(tb$concave.points_worst,mean=fit$tables$concave.points_worst[2,1],sd=fit$tables$concave.points_worst[2,2])
 
+#Probabilities of disease and no disease.
+prob_no_disease = fit$apriori[1]
+prob_yes_disease = fit$apriori[2]
 
+output = ((prob_no_radius_disease * prob_no_text_disease * prob_no_points_disease * prob_no_disease) / (prob_yes_radius_disease * prob_yes_text_disease * prob_yes_points_disease * prob_yes_disease))
+output
+```
 
+_Our prediction tells us .._
+```{r}
+
+pred = ifelse(output > 1, "No Cancer", "Cancer")
+pred
+```
+
+_The e01071 says_
+```{r}
+predict(fit, newdata = tb)
+```
+
+<!-- ######################################################################## -->
+##Learning Curve for Naive Bayes Classifier
+_We start with really high errors but as more data is introduced our error vastly minimizes and stablizes_
+```{r}
+te_errs = c()
+tr_errs = c()
+te_actual = te_dat$diagnosis
+tr_sizes = seq(100, nrow(tr_dat), length.out=10)
+
+for (tr_size in tr_sizes) {
+  tr_dat1 = tr_dat[1:tr_size,]
+  tr_actual = tr_dat1$diagnosis
+  fit = rpart(diagnosis ~ radius_worst + texture_worst + concave.points_worst, data=tr_dat1)
+  
+  # error on training set
+  tr_predicted = predict(fit, tr_dat1, type="class")
+  err = sum(tr_actual != tr_predicted)/length(tr_predicted)
+  tr_errs = c(tr_errs, err)
+  
+  # error on test set
+  te_predicted = predict(fit, te_dat, type="class")
+  err = sum(te_actual != te_predicted)/length(te_predicted)
+  te_errs = c(te_errs, err)
+}
+
+plot(te_errs)
+```
 
 
