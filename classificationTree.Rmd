@@ -33,7 +33,7 @@ te_dat = dat[-num_tr,]
 
 ### Data exploration
 
-Here, we are plotting texture_worst by radius_worst and displaying the occurrences of breast cancer in red, and the occurrences of no breast cancer in green for each point in our plot. This plot shows that there is a boundary line at around 16. This may indicate that these two features will be useful in predicting breast cancer.
+_Here, we are plotting texture worst by radius worst and displaying the occurrences of breast cancer in red, and the occurrences of no breast cancer in green for each point in our plot. This plot shows that there is a boundary line at around 16. This may indicate that these two features will be useful in predicting breast cancer._
 
 ```{r}
 plot(dat$texture_worst, dat$radius_worst, col = "green", main = "Texture Worst by Radius Worst", xlab = "texture worst", ylab = "radius worst", pch=16)
@@ -44,7 +44,7 @@ split = text_rad_fit$splits[1, "index"]
 abline(h=split, lty=2, col='blue')
 ```
 
-Plot texture_worst by concave.points_worst
+_Similar to the previous plot, we see a clear boundary between the two features. However, in this plot we are  using texture worst by concave.points worst._
 
 ```{r}
 plot(dat$texture_worst, dat$concave.points_worst, col = "green", main = "Texture Worst by Concave.Points Worst", xlab = "texture worst", ylab = "concave.points worst", pch=16)
@@ -57,7 +57,7 @@ abline(h=split, lty=2, col='blue')
 
 ### Create Decision Tree classifier
 
-We are creating a decision tree classifier to predict the diagnosis feature based on the features radius_worst, concave.points_worst, and texture_worst.
+_We are creating a decision tree classifier to predict the diagnosis feature based on the features radius worst, concave.points worst, and texture worst._
 
 ```{r}
 fit = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst, data=tr_dat, method="class")
@@ -65,7 +65,7 @@ fit = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst, dat
 prp(fit, extra=106, varlen=-10, main="Classification Tree for Breast Cancer", box.col=c("green", "red")[fit$frame$yval])
 ```
 
-From the confusion matrix for actuals vs. predicted, we can see that we have low false positives and no false negatives.
+_From the confusion matrix for actuals vs. predicted, we can see that we have low false positives and no false negatives._
 
 ```{r}
 predicts = predict(fit, te_dat, type="class")
@@ -75,19 +75,19 @@ conf_mtx = table(actuals, predicts)
 conf_mtx
 ```
 
-We calculate the classifier's accuracy
+_We calculate the classifier's accuracy_
 
 ```{r}
 round(mean(predicts == actuals), 3)
 ```
 
-Here, we calculate the classifier's precision
+_Here, we calculate the classifier's precision_
 
 ```{r}
 conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[1,2])
 ```
 
-Here, we calculate the classifier's recall
+_Here, we calculate the classifier's recall_
 
 ```{r}
 conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[2,1])
@@ -95,7 +95,7 @@ conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[2,1])
 
 ### Learning Curve for Decision Tree Classification
 
-From this learning curve, we can see that this classifier has low bias and low variance because the training errors and the test error lines converge as the training set size increases.
+_From this learning curve, we can see that this classifier has low bias and low variance because the training errors and the test error lines converge as the training set size increases._
 
 ```{r echo=FALSE}
 te_errs = c()
