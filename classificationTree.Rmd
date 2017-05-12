@@ -55,16 +55,9 @@ split = text_conc_fit$splits[1, "index"]
 abline(h=split, lty=2, col='blue')
 ```
 
-```{r}
-plot(dat$radius_worst, dat$concave.points_worst, col = "green", main = "Radius Worst by Concave.Points Worst", xlab = "radius worst", ylab = "concave.points worst", pch=16)
-malignant = dat$diagnosis == "M"
-points(dat[malignant, ]$radius_worst, dat[malignant, ]$concave.points_worst, col = "red", pch=16)
-rad_conc_fit = rpart(diagnosis ~ radius_worst + concave.points_worst, data=tr_dat, method="class")
-split = rad_conc_fit$splits[1, "index"]
-abline(v=split, lty=2, col='blue')
-```
-
 ### Create Decision Tree classifier
+
+We are creating a decision tree classifier to predict the diagnosis feature based on the features radius_worst, concave.points_worst, and texture_worst.
 
 ```{r}
 fit = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst, data=tr_dat, method="class")
@@ -72,7 +65,7 @@ fit = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst, dat
 prp(fit, extra=106, varlen=-10, main="Classification Tree for Breast Cancer", box.col=c("green", "red")[fit$frame$yval])
 ```
 
-Confusion matrix for actuals vs. predicted
+From the confusion matrix for actuals vs. predicted, we can see that we have low false positives and no false negatives.
 
 ```{r}
 predicts = predict(fit, te_dat, type="class")
@@ -102,7 +95,9 @@ conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[2,1])
 
 ### Learning Curve for Decision Tree Classification
 
-```{r}
+From this learning curve, we can see that this classifier has low bias and low variance because the training errors and the test error lines converge as the training set size increases.
+
+```{r echo=FALSE}
 te_errs = c()
 tr_errs = c()
 te_actual = te_dat$diagnosis
