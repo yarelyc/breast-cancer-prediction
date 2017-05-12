@@ -1,0 +1,156 @@
+---
+title: "finalProject-breastCancer"
+author: "Karina Pizano"
+date: "5/8/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(e1071)
+source("/Users/karinapizano/Documents/Data Mining/lin-regr-util.R")
+```
+
+
+<!-- Title -->
+###Breast Cancer Prediction
+_Data Cleaning and Munging_
+```{r }
+dat = read.csv("data.csv")
+
+# Create Factors
+dat$diagnosis = factor(dat$diagnosis, labels =c("None", "Cancer"))
+
+# Part the data.
+data_sets = split_data(dat)
+tr_dat = data_sets[[1]]
+te_dat = data_sets[[2]]
+
+# Remove bad columns and data.
+dat$X = NULL
+```
+
+##Data Exploration
+_Scatter Plot to detect any correlation between the attributes._
+<!-- Scatter plots to detect any correlation, if any -->
+```{r}
+plot(dat[,c("radius_mean", "texture_mean","perimeter_mean", "concavity_mean")])
+```
+
+<!-- Plot all the features, to see if there is any correlation -->
+_We can see more correlation between more attributes_
+```{r}
+plot(dat[,1:10])
+```
+
+
+<!-- Our Data -->
+_Our data contains a good amount of data for both having Cancer and not having Caner, which will make our predictions pretty accurate._
+```{r}
+barplot(table(dat$diagnosis), names.arg=c("No Cancer", "Cancer"), main="Amount of Cancer and Non Cancer patients", col=c("green", "yellow"))
+```
+
+
+<!-- Hist of radius_mean -->
+
+_Whats a popular radius mean when looking an infected area_
+
+```{r}
+hist(dat$radius_mean, main="Radius mean", col="red", xlab = "radius mean")
+```
+
+
+##Naive Bayes Model
+<!-- Naive Bayes Model -->
+_Create a Naive Bayes Model_
+```{r }
+fit = naiveBayes(diagnosis ~ radius_worst + texture_worst + concave.points_worst, data= tr_dat)
+```
+
+<!--Summary of fit -->
+_Summary of the Model_
+```{r }
+summary(fit)
+```
+
+<!-- Generate Predictions -->
+_Predictions & Confusion Matrix_
+```{r}
+predictions = predict(fit, newdata=te_dat)
+con_matrix = table(te_dat$diagnosis, predictions)
+con_matrix
+```
+
+
+<!--Precision -->
+_Precision of the Classifier_
+```{r}
+con_matrix[2,2] / (con_matrix[2,2] + con_matrix[1,2])
+```
+
+
+
+<!-- Recall -->
+_Recall of our Classifier_
+```{r}
+con_matrix[2,2] / (con_matrix[2,2] + con_matrix[2,1])
+```
+
+
+
+
+<!-- Accuracy of the Classifier -->
+_The accuracy of our classifier._
+```{r}
+accuracy = mean(predictions == te_dat$diagnosis)
+accuracy
+```
+
+<!-- Density Plot "RADIUS_WORST" -->
+_Showing the distribution of radius worst when a person is diagnosed with cancer or not._
+```{r}
+
+plot(density(dat[dat$diagnosis == "None",]$radius_worst), col="green", main="Distibution of radius_mean")
+lines(density(dat[dat$diagnosis == "Cancer",]$radius_worst), col="red")
+legend(7,0.18,legend =c("Cancer", "No Cancer"), fill=c("red", "green"), cex=0.75)
+
+```
+<!-- Fitted model Standard deviations and mean using radius_worst when the disease is present and not present -->
+_We are looking at the trained distributions for the fitted model. Mean and Standard Deviation._
+```{r}
+fit$tables$radius_worst
+```
+
+
+
+
+<!-- Density plot mean and standard deviation using "RADIUS_WORST" -->
+_Density plot for mean and standard deviation of radius worst._
+```{r}
+plot(density(fit$tables$radius_worst[1,]), col="red", main="Mean & Standard Deviation")
+lines(density(fit$tables$radius_worst[2,]), col="green")
+
+```
+
+
+
+<!-- Density plot "WORST TEXTURE" -->
+_Density plot for mean and standard deviation of worst texture._
+```{r}
+plot(density(dat[dat$diagnosis == "None",]$texture_worst), col="green", main="Mean")
+lines(density(dat[dat$diagnosis == "Cancer",]$texture_worst), col="red")
+legend(50,0.002,legend =c("Cancer", "No Cancer"), fill=c("red", "green"), cex=0.75)
+```
+
+
+
+
+
+
+
+
+
+
