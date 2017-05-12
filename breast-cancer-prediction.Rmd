@@ -20,7 +20,7 @@ library(rpart)
 
 ## Introduction
 
-#### _We wanted to predict the presence of breast cancer based on features computed from a digitized image of a fine needle aspirate of a breast mass. The features used for the predictions describe characteristics of the cell nuclei present in the image._
+#### _We wanted to predict the presence of breast cancer with an accuracy of at least 85%, based on features that describe characteristics of cancer cell nuclei present in an image._
 
 ### Load data
 
@@ -45,13 +45,44 @@ te_dat = dat[-num_tr,]
 
 ### Data Exploration
 
-_Scatter plot to detect any correlation between the features. We see some linearality between some of the pairs of points. This shows these features are correleted, so they might not work too well with the Naïve Bayes classifier._
+_Scatter plots to detect any correlation between the features. We see strong positive trends between radius mean and perimeter mean, as well as perimeter mean and concavity mean._
 
 ```{r}
 plot(dat[,c("radius_mean", "texture_mean","perimeter_mean", "concavity_mean")])
 ```
 
-_Here, we are plotting texture worst by radius worst and displaying the occurrences of breast cancer in red, and the occurrences of no breast cancer in green for each point in our plot. This plot shows that there is a boundary line at around 16. This may indicate that these two features will be useful in predicting breast cancer._
+_Our dataset contains a good balance of diagnosis data._
+```{r}
+barplot(table(dat$diagnosis), names.arg=c("No Cancer", "Cancer"), main="Amount of Cancer and Non Cancer Patients", col=c("blue", "red4"))
+```
+
+_Function to predict breast cancer using a single element._
+```{r}
+predict_by = function(name){
+  plot(dat$output ~ dat$element, col="red4", pch = 16, ylab = "probability", xlab = name, main=paste0("Breast cancer probability using ", name))
+  fit = glm(output ~ element, data=dat, family=binomial )
+  bp = data.frame(element=seq(range(dat$element)[1],range(dat$element)[2], length.out=50))
+  probs = predict(fit, newdata=bp, type="response")
+  lines(bp$element, probs, lty=2, col = "blue")
+}
+```
+
+####Logistic function using radius worst
+```{r}
+dat$element = dat$radius_worst
+predict_by("radius worst")
+
+```
+
+
+####Logistic function using area standard error
+```{r warning=FALSE}
+dat$element = dat$area_se
+predict_by("area standard error")
+
+```
+
+_Here, we are plotting texture worst by radius worst and displaying the occurrences of breast cancer in red, and the occurrences of no breast cancer in green, for each point in our plot. This plot shows that there is a boundary line at around 16. This indicates that these two features will be useful in predicting breast cancer._
 
 ```{r}
 plot(dat$texture_worst, dat$radius_worst, col = "green", main = "Texture Worst by Radius Worst", xlab = "texture worst", ylab = "radius worst", pch=16)
@@ -62,7 +93,24 @@ split = text_rad_fit$splits[1, "index"]
 abline(h=split, lty=2, col='blue')
 ```
 
+_Density plot for mean and standard deviation of concave points worst. Here we can see that when the feature concave points reaches .13 their is a clear division between having cancer and not having cancer._
+```{r}
+plot(density(dat[dat$diagnosis == "None",]$concave.points_worst), col="green", main="Mean")
+lines(density(dat[dat$diagnosis == "Cancer",]$concave.points_worst), col="red")
+legend(-.02,11,legend =c("Cancer", "No Cancer"), fill=c("red", "green"), cex=0.75)
+
+```
+
 ### Model Creation
+
+#### Creating Logistic Regression
+
+_We are creating a logistic regression model using radius worst, area worst, and smoothness worst in order to predict breast cancer._
+
+```{r warning=FALSE}
+logistic_fit = glm(output ~ radius_worst + area_worst + smoothness_worst, dat=tr_dat, family=binomial)
+
+```
 
 #### Creating Decision Tree Classifier
 
@@ -84,14 +132,28 @@ bayes_fit = naiveBayes(diagnosis ~ radius_worst + texture_worst + concave.points
 
 ### Assessing the Models
 
+#### Confusion matrix for Logistic Regression
+
+_From the confusion matrix for actuals vs. predicted, we can see that we have low false positives and low false negatives._
+```{r}
+pred = predict(logistic_fit, newdata=te_dat, type="response")
+predicts = as.numeric(pred > 0.5)
+actuals = te_dat$output
+conf_mtx = table(predicts, actuals)
+row.names(conf_mtx) = c("B", "M")
+colnames(conf_mtx) = c("B", "M")
+conf_mtx
+
+```
+
 #### Confusion matrix for Decision Tree
 _From the confusion matrix for actuals vs. predicted, we can see that we have low false positives and no false negatives._
 
 ```{r}
 tree_predicts = predict(tree_fit, te_dat, type="class")
 tree_actuals = te_dat$diagnosis
-
 tree_conf_mtx = table(tree_actuals, tree_predicts)
+row.names(tree_conf_mtx) = c("B", "M")
 tree_conf_mtx
 ```
 
@@ -103,5 +165,216 @@ bayes_predicts = predict(bayes_fit, te_dat)
 bayes_actuals = te_dat$diagnosis
 
 bayes_conf_mtx = table(bayes_actuals, bayes_predicts)
+row.names(bayes_conf_mtx) = c("B", "M")
 bayes_conf_mtx
 ```
+
+###Accuracy of our Classifiers
+
+_Logistic Regression_
+```{r}
+round(mean(predicts == actuals), 3)
+```
+
+_Tree Classifier_
+```{r}
+round(mean(tree_predicts == tree_actuals), 3)
+```
+
+_Naive Bayes Classifier_
+```{r}
+accuracy = round(mean(bayes_predicts == te_dat$diagnosis), 3)
+accuracy
+```
+
+### Precision of our Classifiers
+
+_Logistic Regression_
+```{r}
+conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[1,2])
+```
+
+_Tree Classification_
+```{r}
+tree_conf_mtx[2,2] / (tree_conf_mtx[2,2] + tree_conf_mtx[1,2])
+```
+
+_Naive Bayes_
+```{r}
+bayes_conf_mtx[2,2] / (bayes_conf_mtx[2,2] + bayes_conf_mtx[1,2])
+```
+
+### Recall of our Classifier
+
+_Logistic Regression_
+```{r}
+conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[2,1])
+```
+
+_Tree Classification_
+```{r}
+tree_conf_mtx[2,2] / (tree_conf_mtx[2,2] + tree_conf_mtx[2,1])
+```
+
+_Naive Bayes_
+```{r}
+bayes_conf_mtx[2,2] / (bayes_conf_mtx[2,2] + bayes_conf_mtx[2,1])
+```
+
+### Learning Curves for Classifiers
+
+#### Logistic Regression
+
+_From this learning curve, we can see that this classifier has high variance getting more training data will help the classifier._
+
+```{r echo=FALSE, warning=FALSE}
+te_errs = c()
+tr_errs = c()
+te_actual = te_dat$output
+
+tr_sizes = seq(100, nrow(tr_dat), length.out=10)
+
+for (tr_size in tr_sizes) {
+  tr_dat1 = tr_dat[1:tr_size,]
+  tr_actual = tr_dat1$output
+  
+  #creating model using tr_dat1
+  fit = glm(output ~ radius_worst + area_worst + smoothness_worst, dat=tr_dat1, family=binomial)
+  
+  # error on training set
+  tr_predicted = predict(fit, tr_dat1, type="response")
+  tr_predicted = as.numeric(tr_predicted > 0.5)
+  err = sum(tr_actual != tr_predicted)/length(tr_predicted)
+  tr_errs = c(tr_errs, err)
+  
+  # error on test set
+  te_predicted = predict(fit, te_dat, type="response")
+  te_predicted = as.numeric(te_predicted > 0.5)
+  err = sum(te_actual != te_predicted)/length(te_predicted)
+  te_errs = c(te_errs, err)
+}
+ plot(tr_sizes, te_errs, type="l", col="red4", ylim=range(c(te_errs,tr_errs)), xlab="Size", ylab="Error")
+ lines(tr_sizes, tr_errs, col="blue")
+legend(range(c(te_errs,tr_errs))[2], x = 350, legend = c("training errors", "testing errors"), col = c("blue", "red4"), pch="|",  cex = .8)
+```
+
+#### Decision Tree Classification
+
+_From this learning curve, we can see that this classifier has low bias and low variance because the training errors and the test error lines converge as the training set size increases._
+
+```{r echo=FALSE}
+te_errs = c()
+tr_errs = c()
+te_actual = te_dat$diagnosis
+tr_sizes = seq(100, nrow(tr_dat), length.out=10)
+for (tr_size in tr_sizes) {
+  tr_dat1 = tr_dat[1:tr_size,]
+  tr_actual = tr_dat1$diagnosis
+  fit = rpart(diagnosis ~ radius_worst + concave.points_worst + texture_worst, data=tr_dat1, method="class")
+  # error on training set
+  tr_predicted = predict(fit, tr_dat1, type="class")
+  tr_predicted
+  err = sum(tr_actual != tr_predicted)/length(tr_predicted)
+  tr_errs = c(tr_errs, err)
+ 
+  # error on test set
+  te_predicted = predict(fit, te_dat, type="class")
+  err = sum(te_actual != te_predicted)/length(te_predicted)
+  te_errs = c(te_errs, err)
+  te_errs
+}
+
+plot(range(tr_sizes), range(te_errs, tr_errs), type='n', xlab='training set size', ylab='error')
+
+lines(tr_sizes, tr_errs, col='green')
+lines(tr_sizes, te_errs, col='red4')
+
+legend(range(c(te_errs,tr_errs))[2], x = 350, legend = c("training errors", "testing errors"), col = c("green", "red4"), pch="|",  cex = .8)
+```
+
+#### Naive Bayes Classifier
+
+_The learning curves shows, that we have high variance. We need more data to train and test. Overall the errors decrease for both the test and training data._
+
+```{r echo=FALSE}
+
+te_errs = c()
+tr_errs = c()
+te_actual = te_dat$diagnosis
+tr_sizes = seq(100, nrow(tr_dat), length.out=10)
+
+for (tr_size in tr_sizes) {
+  tr_dat1 = tr_dat[1:tr_size,]
+  tr_actual = tr_dat1$diagnosis
+  fit = naiveBayes(diagnosis ~ radius_worst + texture_worst + concave.points_worst, data=tr_dat1)
+  
+  # error on training set
+  tr_predicted = predict(fit, tr_dat1, type="class")
+  tr_predicted
+  err = sum(tr_actual != tr_predicted)/length(tr_predicted)
+  tr_errs = c(tr_errs, err)
+ 
+  # error on test set
+  te_predicted = predict(fit, te_dat, type="class")
+  err = sum(te_actual != te_predicted)/length(te_predicted)
+  te_errs = c(te_errs, err)
+  te_errs
+}
+
+plot(range(tr_sizes), range(te_errs, tr_errs), type='n', xlab='training set size', ylab='error')
+
+lines(tr_sizes, tr_errs, col='purple')
+lines(tr_sizes, te_errs, col='red4')
+
+legend(range(c(te_errs,tr_errs))[2], x = 350, legend = c("training errors", "testing errors"), col = c("purple", "red4"), pch="|",  cex = .8)
+```
+
+
+### Additional Logistic Regression Model Assessments
+
+_Function that takes in predicts and actuals to produce a dataframe that contains model-assessing information, using different thresholds._
+```{r}
+prec_recall_summary = function(predicts, actuals) {
+   thresh = seq(0, 1, length.out=50)
+   prec_rec = data.frame()
+   actuals = factor(as.numeric(actuals))
+   for (th in thresh) {
+     predicts = factor(as.numeric(pred >= th), levels=c("0","1"))
+     prec_rec = rbind(prec_rec, as.vector(table(predicts, actuals)))
+   }
+   names(prec_rec) = c("TN", "FP", "FN", "TP")
+   prec_rec$threshold = thresh
+   prec_rec$precision = prec_rec$TP/(prec_rec$TP + prec_rec$FP)
+   prec_rec$recall    = prec_rec$TP/(prec_rec$TP + prec_rec$FN)
+   prec_rec$false_pos = prec_rec$FP/(prec_rec$FP + prec_rec$TN)
+   return(prec_rec)
+ }
+ prec_rec = prec_recall_summary(predicts, actuals)
+
+```
+
+
+
+####Plots show precision and recall for Logistic Regression
+
+```{r}
+par(mfrow=c(2,1))
+plot(prec_rec$threshold, prec_rec$precision, col = "red4", type = "l", xlab = "threshold", ylab = "precision" )
+grid(col="grey60")
+plot(prec_rec$threshold, prec_rec$recall, col = "red4", type = "l", xlab = "threshold", ylab = "recall" )
+grid(col="grey60")
+
+```
+
+####Receiver Operating Character Graph for Logistic Regrassion
+
+```{r}
+
+prec_rec$true_pos = prec_rec$TP / (prec_rec$TP + prec_rec$FN)
+plot( prec_rec$false_pos, prec_rec$true_pos, col = "red4", type = "l", xlab = "True positive rate", ylab = "False positive rate" , main= "ROC")
+grid(col="grey60")
+```
+
+## Conclusion
+_In conclusion, we were able to obtain an average of 96.6% accuracy when using Logistic Regression, Decision Trees, and Naïve Byes. The classifier that achieved the highest accuracy was _
+

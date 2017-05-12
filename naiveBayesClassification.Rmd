@@ -116,8 +116,8 @@ fit$tables$radius_worst
 
 _Density plot for mean and standard deviation of radius worst._
 ```{r}
-plot(density(fit$tables$radius_worst[1,]), col="red", main="Mean & Standard Deviation")
-lines(density(fit$tables$radius_worst[2,]), col="cyan")
+plot(density(fit$tables$texture_worst[1,]), col="red", main="Mean & Standard Deviation")
+lines(density(fit$tables$texture_worst[2,]), col="cyan")
 legend(-7,0.05,legend =c("Stan. Dev.", "Mean"), fill=c("cyan", "red"), cex=0.75)
 
 ```
@@ -125,8 +125,8 @@ legend(-7,0.05,legend =c("Stan. Dev.", "Mean"), fill=c("cyan", "red"), cex=0.75)
 
 _Density plot for mean and standard deviation of worst texture. Here we can see that when worst texture is around 25 the line between having cancer and not is blurred, but is leaning more on having cancer._
 ```{r}
-plot(density(dat[dat$diagnosis == "None",]$texture_worst), col="cyan", main="Mean")
-lines(density(dat[dat$diagnosis == "Cancer",]$texture_worst), col="red")
+plot(density(dat[dat$diagnosis == "None",]$concave.points_worst), col="cyan", main="Mean")
+lines(density(dat[dat$diagnosis == "Cancer",]$concave.points_worst), col="red")
 legend(10,0.06,legend =c("Cancer", "No Cancer"), fill=c("red", "cyan"), cex=0.75)
 ```
 
@@ -202,7 +202,6 @@ plot(range(tr_sizes), range(te_errs, tr_errs), type='n', xlab='training set size
 
 lines(tr_sizes, tr_errs, col='green')
 lines(tr_sizes, te_errs, col='red')
-
 ```
 
 

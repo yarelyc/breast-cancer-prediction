@@ -93,7 +93,7 @@ _Here, we calculate the classifier's recall_
 conf_mtx[2,2] / (conf_mtx[2,2] + conf_mtx[2,1])
 ```
 
-### Learning Curve for Decision Tree Classification
+#### Decision Tree Classification
 
 _From this learning curve, we can see that this classifier has low bias and low variance because the training errors and the test error lines converge as the training set size increases._
 
@@ -124,3 +124,4 @@ plot(range(tr_sizes), range(te_errs, tr_errs), type='n', xlab='training set size
 lines(tr_sizes, tr_errs, col='green')
 lines(tr_sizes, te_errs, col='red')
 ```
+
