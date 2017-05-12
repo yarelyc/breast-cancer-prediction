@@ -56,7 +56,7 @@ barplot(table(dat$diagnosis), names.arg=c("No Cancer", "Cancer"), main="Amount o
 
 
 
-_Whats a popular radius mean when looking at an infected area_
+_Whats a popular radius mean when looking at an infected area?_
 
 ```{r}
 hist(dat$radius_worst, main="Radius Worst", col="cyan", xlab = "radius worst")
@@ -179,10 +179,11 @@ te_errs = c()
 tr_errs = c()
 te_actual = te_dat$diagnosis
 tr_sizes = seq(100, nrow(tr_dat), length.out=10)
+
 for (tr_size in tr_sizes) {
   tr_dat1 = tr_dat[1:tr_size,]
   tr_actual = tr_dat1$diagnosis
-  fit = naiveBayes(diagnosis ~ radius_worst + concave.points_worst + texture_worst, data=tr_dat1)
+  fit = naiveBayes(diagnosis ~ radius_worst + texture_worst + concave.points_worst, data=tr_dat1)
   
   # error on training set
   tr_predicted = predict(fit, tr_dat1, type="class")
@@ -197,9 +198,9 @@ for (tr_size in tr_sizes) {
   te_errs
 }
 
-plot(range(tr_sizes), range(te_errs, tr_errs), type='n', xlab='Size of Data', ylab='Error')
+plot(range(tr_sizes), range(te_errs, tr_errs), type='n', xlab='training set size', ylab='error')
 
-lines(tr_sizes, tr_errs, col='cyan')
+lines(tr_sizes, tr_errs, col='green')
 lines(tr_sizes, te_errs, col='red')
 
 ```
