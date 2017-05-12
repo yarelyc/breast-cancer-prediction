@@ -2,13 +2,6 @@ dat = read.csv("/Users/yarelychino/Desktop/breast-cancer-prediction/data.csv")
 dat$X = NULL
 dat$output = ifelse( dat$diagnosis == "M", 1, 0)
 
-#plot
-plot(dat$texture_mean, dat$radius_mean, col = "blue", main = "Radius by Texture")
-malignant = dat$diagnosis == "M"
-points(dat[malignant, ]$texture_mean, dat[malignant, ]$radius_mean, col = "red")
-
-
-
 #radius mean
 par(mfrow=c(2,5))
 plot(density(dat$radius_se))
@@ -29,6 +22,7 @@ malignant = dat$diagnosis == "M"
 points(dat[malignant, ]$area_worst, dat[malignant, ]$texture_mean, col = "red")
 
 
+
 #plot Worst Area, Worst Smoothness
 plot(dat$area_worst, dat$smoothness_mean, col = "blue", main = "Worst Area vs Worst Smoothness")
 malignant = dat$diagnosis == "M"
@@ -41,9 +35,9 @@ malignant = dat$diagnosis == "M"
 points(dat[malignant, ]$radius_worst, dat[malignant, ]$texture_worst, col = "red")
 
 
-plot(dat$diagnosis ~ dat$radius_worst)
+plot(dat$output ~ dat$radius_worst)
 
-fit = glm(diagnosis ~ radius_worst, data=dat, family=binomial)
+fit = glm(output ~ radius_worst, data=dat, family=binomial)
 
 bp = data.frame(radius_worst=seq(5,40,10))
 probs = predict(fit, newdata=bp, type="response")
@@ -52,17 +46,17 @@ plot(diagnosis ~ radius_worst, data=dat, col="red4",
      xlab="restbp", ylab="P(heart disease)", pch=20)
 lines(bp$radius_worst, probs, col="green4", lwd=2)
 
-par(mfrow=c(3,4))
-plot(dat$output ~ dat$radius_worst)
-plot(dat$output ~ dat$texture_worst)
-plot(dat$output ~ dat$perimeter_worst)
-plot(dat$output ~ dat$area_worst)
-plot(dat$output ~ dat$smoothness_worst)
-plot(dat$output ~ dat$compactness_worst)
-plot(dat$output ~ dat$concavity_worst)
-plot(dat$output ~ dat$concave.points_worst)
-plot(dat$output ~ dat$symmetry_worst)
-plot(dat$output ~ dat$fractal_dimension_worst)
+par(mfrow=c(3,3))
+plot(output ~ radius_se, data = dat)
+plot(output ~ texture_se, data = dat)
+plot(output ~ perimeter_se, data = dat)
+plot(output ~ area_se, data = dat)
+plot(output ~ smoothness_se, data = dat)
+plot(output ~ compactness_se, data = dat)
+plot(output ~ concavity_se, data = dat)
+plot(output ~ concave.points_se, data = dat)
+plot(output ~ symmetry_se, data = dat)
+plot(output ~ fractal_dimension_se, data = dat)
 
 
 
@@ -72,7 +66,8 @@ plot(dat$output ~ dat$fractal_dimension_worst)
 # names(heart) = c("AGE", "SEX", "CHESTPAIN", "RESTBP", "CHOL", "SUGAR", "ECG", "MAXHR", "ANGINA", "DEP", "EXERCISE", "FLUOR", "THAL", "OUTPUT")
 # names(heart) = tolower(names(heart))
 # heart$chestpain = factor(heart$chestpain)
-# heart$output = heart$output - 1    # convert to 0-1 range
+# heart$output = heart$output - 1    # convert to 0-1 
+
 # 
 # fit = glm(output ~ restbp, data=heart, family=binomial)
 # # plot the result
@@ -85,3 +80,7 @@ plot(dat$output ~ dat$fractal_dimension_worst)
 # 
 # 
 # 
+
+
+
+
